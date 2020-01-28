@@ -14,6 +14,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -45,32 +47,35 @@ public class BillDbEntity {
 	private String owner_id;
 	
 	@Column
-	@NotNull
+	@NotNull(groups= Existing.class)
+	@NotBlank(groups= Existing.class)
 	private String vendor;
 	
 	@Column
 	@NotNull
 	@Temporal(TemporalType.DATE)
-	@JsonFormat(pattern="yyyy-MM-dd")
+	@JsonFormat(pattern="YYYY-MM-DD")
+	@NotNull(groups= Existing.class)
 	private Date bill_date;
 	
 	@Column
 	@Temporal(TemporalType.DATE)
-	@JsonFormat(pattern="yyyy-MM-dd")
-	@NotNull
+	@JsonFormat(pattern="YYYY-MM-DD")
+	@NotNull(groups= Existing.class)
 	private Date due_date;
 	
 	@Column
-	@NotNull
+	@NotNull(groups= Existing.class)
+	@DecimalMin("0.01")
 	private double amount_due;
 	
 	@Column
-	@NotNull
+	@NotNull(groups= Existing.class)
 	@ElementCollection
 	private List<String> categories;
 	
 	@Column
-	@NotNull
+	@NotNull(groups= Existing.class)
 	@Enumerated(EnumType.STRING)
 	private PaymentStatus paymentStatus;
 
@@ -159,17 +164,8 @@ public class BillDbEntity {
 		
 	}
 	
-	public BillDbEntity(Bill bill) {
-		
-		this.setCreated_ts(LocalDateTime.now());
-		this.setUpdated_ts(LocalDateTime.now());
-		this.setVendor(bill.getVendor());
-		this.setAmount_due(bill.getAmount_due());
-		this.setBill_date(bill.getBill_date());
-		this.setCategories(bill.getCategories());
-		this.setPaymentStatus(bill.getPaymentStatus());
-		this.setDue_date(bill.getDue_date());
-		
+	
+	public interface Existing{
 		
 	}
 

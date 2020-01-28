@@ -29,7 +29,7 @@ public class UserController {
 	
 	//Get user Information
 	@GetMapping(path ="v1/user/self", produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getUserInfo(@RequestHeader(value = "Authorization") String authToken){
+	public ResponseEntity<?> getUserInfo(@RequestHeader(value = "Authorization",required=true) String authToken){
 		
 		User authenticatedUser = checkAuthentication(authToken);
 		
@@ -37,38 +37,44 @@ public class UserController {
 			return new ResponseEntity<>(authenticatedUser,HttpStatus.OK);
 		}
 		else {
-			return new ResponseEntity<>(null,HttpStatus.UNAUTHORIZED);
+			return new ResponseEntity<>("Username or password is incorrect",HttpStatus.UNAUTHORIZED);
 		}		
 	}
 	
 	//Update user information
 	@PutMapping(path="/v1/user/self",consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> updateUser(@RequestHeader(value = "Authorization") String authToken,
-			@Valid @RequestBody User user) {
+	public ResponseEntity<?> updateUser(@RequestHeader(value = "Authorization",required=true) String authToken,
+										@Valid @RequestBody(required=true) User user) {
 	
 		if(user.getAccount_created() == null && user.getAccount_updated()==null && user.getId()==null) {
+			
 			User authenticatedUser = checkAuthentication(authToken);
 	
 			if (authenticatedUser != null) {
+				
 				LocalDateTime accountUpdated = LocalDateTime.now();
 				String newHashPw = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-				int updateStatus = userDao.updateUser(user.getFirst_name(), user.getLast_name(), newHashPw, accountUpdated,
-						authenticatedUser.getEmail_address());
+				
+				int updateStatus = userDao.updateUser(user.getFirst_name(), 
+													  user.getLast_name(), 
+													  newHashPw, 
+													  accountUpdated,
+													  authenticatedUser.getEmail_address());
 				if (updateStatus == 1) {
-					return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+					return new ResponseEntity<>("User details Updated", HttpStatus.NO_CONTENT);
 				}
 			}
 			
-			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+			return new ResponseEntity<>("Username or password is incorrect", HttpStatus.UNAUTHORIZED);
 		}
 		
-		return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<>("Do not provide account_created,account_updated, and userId fields", HttpStatus.BAD_REQUEST);
 
 	}
 	
 	//Create a user
-	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> createUser(@Valid @RequestBody User user){
+	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE )
+	public ResponseEntity<?> createUser(@Valid @RequestBody(required=true) User user){
 		
 		User emailExists = userDao.emailExists(user.getEmail_address());
 		
@@ -87,7 +93,7 @@ public class UserController {
 		}
 		else
 		{
-			return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("User with this email already exist",HttpStatus.BAD_REQUEST);
 		}
 		
 	}

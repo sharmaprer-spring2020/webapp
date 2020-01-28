@@ -5,13 +5,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
-import javax.validation.Valid;
-
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,9 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.neu.edu.dao.BillDao;
 import com.neu.edu.dao.UserDao;
-import com.neu.edu.pojo.Bill;
 import com.neu.edu.pojo.BillDbEntity;
 import com.neu.edu.pojo.User;
+
 
 @RestController
 public class BillController {
@@ -37,19 +36,20 @@ public class BillController {
 	private UserDao userDao;
 	
 	
-	@PostMapping(path ="v1/bill/", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path ="/v1/bill/", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
 		public ResponseEntity<?> createBills(@RequestHeader(value = "Authorization") String authToken, 
-											 @Valid @RequestBody Bill bill){
+											 @Validated(BillDbEntity.Existing.class) @RequestBody(required=true) BillDbEntity bill){
 			
 			User userExists = checkAuthentication(authToken);
 			
 			if(userExists != null) {
+				//BillDbEntity billDb = new BillDbEntity(bill);
+				//billDb.setOwner_id(userExists.getId());
+				bill.setCreated_ts(LocalDateTime.now());
+				bill.setUpdated_ts(LocalDateTime.now());
+				bill.setOwner_id(userExists.getId());
 				
-				
-				BillDbEntity billDb = new BillDbEntity(bill);
-				billDb.setOwner_id(userExists.getId());
-				
-				BillDbEntity billDB= billDao.save(billDb);
+				BillDbEntity billDB= billDao.save(bill);
 				
 				return new ResponseEntity<>(billDB,HttpStatus.OK);
 			}
@@ -58,7 +58,7 @@ public class BillController {
 			}		
 		}
 	
-	@GetMapping(path ="v1/bills", produces=MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(path ="/v1/bills", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getAllBills(@RequestHeader(value = "Authorization") String authToken){
 		
 		User userExists = checkAuthentication(authToken);
@@ -75,16 +75,24 @@ public class BillController {
 		}		
 	 }
 	
-	@DeleteMapping(path ="v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> deleteBillbyId(@RequestHeader(value = "Authorization") String authToken, @PathVariable(required=true)String id){
+	@DeleteMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> deleteBillbyId(@RequestHeader(value = "Authorization") String authToken, 
+											@PathVariable(required=true)String id){
 		
 		User userExists = checkAuthentication(authToken);
+		Optional<BillDbEntity> billDbEntityOpt = billDao.findById(id);
+
 		
-		if(userExists != null) {
+		if(userExists != null) { //isAuthorisedUser
 			
-			if (billDao.existsById(id)) {
+			//if (billDao.existsById(id)) { //Bill id is valid
+			if (billDbEntityOpt.isPresent()) {
 				
-				if(billDao.getInfo(userExists.getId(), id) != null) {
+				BillDbEntity billEntity = billDbEntityOpt.get();
+				
+				//if(billDao.getInfo(userExists.getId(), id) != null) {
+				
+				if(billEntity.getOwner_id().equals(userExists.getId())) { //Bill has valid owner
 					
 					billDao.deleteById(id);
 					return new ResponseEntity<>("Bill deleted",HttpStatus.NO_CONTENT);
@@ -101,8 +109,9 @@ public class BillController {
 			
 	 }
 	
-	@GetMapping(path ="v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getBillById(@RequestHeader(value = "Authorization") String authToken, @PathVariable(required=true)String id){
+	@GetMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getBillById(@RequestHeader(value = "Authorization") String authToken, 
+										 @PathVariable(required=true)String id){
 		
 		User userExists = checkAuthentication(authToken);
 		
@@ -127,10 +136,10 @@ public class BillController {
 			
 	 }
 	
-	@PutMapping(path ="v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
+	@PutMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> upadateBillbyId(@RequestHeader(value = "Authorization") String authToken, 
 											 @PathVariable(required=true)String id,
-											 @Valid @RequestBody Bill bill){
+											 @Validated(BillDbEntity.Existing.class) @RequestBody(required=true) BillDbEntity bill){
 		
 		User userExists = checkAuthentication(authToken);
 		Optional<BillDbEntity> billDbEntityOpt = billDao.findById(id);
