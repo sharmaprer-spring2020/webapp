@@ -1,8 +1,9 @@
 package com.neu.edu.pojo;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -14,9 +15,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.data.annotation.ReadOnlyProperty;
@@ -44,38 +45,36 @@ public class BillDbEntity {
 	
 	@Column(columnDefinition ="VARCHAR(36)")
 	@NotNull
+	@ReadOnlyProperty
 	private String owner_id;
 	
 	@Column
-	@NotNull(groups= Existing.class)
-	@NotBlank(groups= Existing.class)
+	@NotNull
+	@NotBlank
 	private String vendor;
 	
 	@Column
 	@NotNull
-	@Temporal(TemporalType.DATE)
-	@JsonFormat(pattern="YYYY-MM-DD")
-	@NotNull(groups= Existing.class)
-	private Date bill_date;
+	//@Temporal(TemporalType.DATE)
+	private LocalDate bill_date;
 	
 	@Column
-	@Temporal(TemporalType.DATE)
-	@JsonFormat(pattern="YYYY-MM-DD")
-	@NotNull(groups= Existing.class)
-	private Date due_date;
+	@NotNull
+	//@Temporal(TemporalType.DATE)
+	private LocalDate due_date;
 	
 	@Column
-	@NotNull(groups= Existing.class)
-	@DecimalMin("0.01")
-	private double amount_due;
+	@NotNull
+	private Double amount_due;
 	
 	@Column
-	@NotNull(groups= Existing.class)
+	@NotNull
 	@ElementCollection
-	private List<String> categories;
+	@Size(min=1)
+	private Set<String> categories;
 	
 	@Column
-	@NotNull(groups= Existing.class)
+	@NotNull
 	@Enumerated(EnumType.STRING)
 	private PaymentStatus paymentStatus;
 
@@ -119,20 +118,21 @@ public class BillDbEntity {
 	public void setVendor(String vendor) {
 		this.vendor = vendor;
 	}
-
-	public Date getBill_date() {
+	@JsonFormat(pattern="yyyy-MM-dd")
+	public LocalDate getBill_date() {
 		return bill_date;
 	}
 
-	public void setBill_date(Date bill_date) {
+	public void setBill_date(LocalDate bill_date) {
 		this.bill_date = bill_date;
 	}
-
-	public Date getDue_date() {
+	
+	@JsonFormat(pattern="yyyy-MM-dd")
+	public LocalDate getDue_date() {
 		return due_date;
 	}
 
-	public void setDue_date(Date due_date) {
+	public void setDue_date(LocalDate due_date) {
 		this.due_date = due_date;
 	}
 
@@ -144,11 +144,11 @@ public class BillDbEntity {
 		this.amount_due = amount_due;
 	}
 
-	public List<String> getCategories() {
+	public Set<String> getCategories() {
 		return categories;
 	}
 
-	public void setCategories(List<String> categories) {
+	public void setCategories(Set<String> categories) {
 		this.categories = categories;
 	}
 
@@ -164,10 +164,15 @@ public class BillDbEntity {
 		
 	}
 	
-	
-	public interface Existing{
+	public BillDbEntity(Bill bill) {
+		super();
+		this.setVendor(bill.getVendor());
+		this.setBill_date(bill.getBill_date());
+		this.setDue_date(bill.getDue_date());
+		this.setAmount_due(bill.getAmount_due());
+		this.setCategories(bill.getCategories());
+		this.setPaymentStatus(bill.getPaymentStatus());
 		
 	}
-
 	
 }
