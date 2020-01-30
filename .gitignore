@@ -9,8 +9,21 @@ buildNumber.properties
 .mvn/timing.properties
 # https://github.com/takari/maven-wrapper#usage-without-binary-jar
 .mvn/wrapper/maven-wrapper.jar
+mvnw
+Mvnw.cmd
+
 # Compiled class file
 *.class
+
+
+###For STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
 # Log file
 *.log
@@ -32,3 +45,9 @@ buildNumber.properties
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# General
+.DS_Store
+
+#For eclipse
+.settings/

@@ -1,15 +1,17 @@
 package com.neu.edu.pojo;
 
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -30,7 +32,7 @@ public class User {
 	@ReadOnlyProperty
 	@GeneratedValue(generator = "UUID2")
 	@GenericGenerator( name="UUID2", strategy = "uuid2")
-	@Column(name = "id", updatable = false, columnDefinition = "VARCHAR(36)",insertable = false)
+	@Column(name = "user_id", updatable = false, columnDefinition = "VARCHAR(36)",insertable = false)
 	private String id;
 	
 	@NotBlank(message ="First name value cannot be empty")
@@ -64,6 +66,11 @@ public class User {
 	@ReadOnlyProperty
 	@Column
 	private LocalDateTime account_updated;
+	
+	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name="owner_id")
+	@JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
+	private Set<BillDbEntity> bill;
 
 	public User() {
 		
@@ -124,6 +131,12 @@ public class User {
 		this.account_updated = account_updated;
 	}
 
+	public Set<BillDbEntity> getBill() {
+		return bill;
+	}
+	public void setBill(Set<BillDbEntity> bill) {
+		this.bill = bill;
+	}
 	@Override
 	public String toString() {
 		return "User [id=" + id + ", first_name=" + first_name + ", last_name=" + last_name + ", password=" + password
