@@ -1,0 +1,44 @@
+---
+version: 2
+jobs:
+  pr_check:
+    docker:
+      - image: circleci/openjdk:8-jdk
+      - image: maven
+      - image: mysql
+        environment:
+        MYSQL_USER: root
+        MYSQL_PASSWORD: P@smar02
+        MYSQL_HOST: localhost:3306
+        MYSQL_DATABASE: userdb
+
+    steps:
+    - checkout #check out source code
+    - run:
+        name: maven build
+        command: mvn clean install test verify
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+      - image: maven
+      - image: mysql
+        environment:
+        MYSQL_USER: root
+        MYSQL_PASSWORD: P@smar02
+        MYSQL_HOST: localhost:3306
+        MYSQL_DATABASE: userdb
+
+    steps:
+    - checkout #check out source code
+    - run:
+        name: maven build
+        command: mvn clean install test verify
+    
+workflows:
+  version: 2
+  pr-check-workflow:
+    jobs:
+    - pr_check
+  build-deply-workflow:
+    jobs:
+    - build
