@@ -16,7 +16,6 @@ To get project on local do following:
 - **`git clone git@github.com:prernsha/webapp.git`**   
 - now cd into **`webapp`**  
 
-
 ### Build and Deploy instructions for web application ###  
 We are using Maven so run the following command  
 **`mvn clean install test`**  
@@ -25,6 +24,3 @@ We are using Maven so run the following command
 - `clean`: removes any generated files  
 - `install`: install the package locally
 - `test`: test unit tests for the code
-
-
-
