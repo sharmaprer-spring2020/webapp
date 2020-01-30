@@ -1,25 +1,26 @@
-# webapp
+# webapp #
 
-This application allows Users to be created into the system and then users can further add bills. 
+This application allow User creation and further add bills for those users. 
 
 Allowing users to perform CRUD operations for their bills.
 
-A. Prerequisites for building and deploying locally
+### Prerequisites for building and deploying locally ###
 
-1. Requires STS : Tested on Version: 3.9.5.RELEASE
-2. Requires git to be installed
-3. Maven installed on system
+1. Spring Tool Suite(STS) : Tested on Version: 3.9.5.RELEASE
+2. JDK 1.8 or later
+2. Git latest version
+3. Maven 3.1
+4. MySQL
 
-Build and Deploy instructions for web application
+To get project on local do following:
+- **`git clone git@github.com:prernsha/webapp.git`**   
+- now cd into **`webapp`**  
 
-This is a maven build: Command to build is 
-	mvn clean install test
-
-# Maven
-Maven goals description - 
-	clean: removes any generated files
-	install: install the package locally
-	test: test unit tests for the code
-
-
-
+### Build and Deploy instructions for web application ###  
+We are using Maven so run the following command  
+**`mvn clean install test`**  
+  
+#### Maven #### goals description -  
+- `clean`: removes any generated files  
+- `install`: install the package locally
+- `test`: test unit tests for the code
