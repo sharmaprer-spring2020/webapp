@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.neu.edu.dao.UserDao;
+import com.neu.edu.exception.QueriesException;
 import com.neu.edu.pojo.User;
 
 
@@ -29,46 +30,55 @@ public class UserController {
 	
 	//Get user Information
 	@GetMapping(path ="v1/user/self", produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getUserInfo(@RequestHeader(value = "Authorization") String authToken){
-		
+	public ResponseEntity<Object> getUserInfo(@RequestHeader(value = "Authorization",required=true) String authToken) throws QueriesException{
+	
 		User authenticatedUser = checkAuthentication(authToken);
 		
 		if(authenticatedUser != null) {
 			return new ResponseEntity<>(authenticatedUser,HttpStatus.OK);
 		}
 		else {
-			return new ResponseEntity<>(null,HttpStatus.UNAUTHORIZED);
+			
+			return new ResponseEntity<>("{\n" + "\"error\":\"Not authorized\"\n" + "}",HttpStatus.UNAUTHORIZED);
 		}		
 	}
 	
 	//Update user information
 	@PutMapping(path="/v1/user/self",consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> updateUser(@RequestHeader(value = "Authorization") String authToken,
-			@Valid @RequestBody User user) {
+	public ResponseEntity<?> updateUser(@RequestHeader(value = "Authorization",required=true) String authToken,
+										@Valid @RequestBody(required=true) User user) throws QueriesException{
 	
 		if(user.getAccount_created() == null && user.getAccount_updated()==null && user.getId()==null) {
+			
 			User authenticatedUser = checkAuthentication(authToken);
 	
 			if (authenticatedUser != null) {
+				
 				LocalDateTime accountUpdated = LocalDateTime.now();
 				String newHashPw = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-				int updateStatus = userDao.updateUser(user.getFirst_name(), user.getLast_name(), newHashPw, accountUpdated,
-						authenticatedUser.getEmail_address());
-				if (updateStatus == 1) {
-					return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+				
+				try {
+					int updateStatus = userDao.updateUser(user.getFirst_name(), 
+														  user.getLast_name(), 
+														  newHashPw, 
+														  accountUpdated,
+														  authenticatedUser.getEmail_address());
+					if (updateStatus == 1) {
+						return new ResponseEntity<>("{\n" + "\"success\":\"User details Updated\"\n" + "}", HttpStatus.NO_CONTENT);
+					}
+				}catch (Exception e) {
+					throw new QueriesException("Internal SQL Server Error");
 				}
 			}
-			
-			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+				return new ResponseEntity<>("{\n" + "\"error\":\"Username or password is incorrect\"\n" + "}", HttpStatus.UNAUTHORIZED);
 		}
-		
-		return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<>("{\n" + "\"error\":\"Do not provide account_created,account_updated, and userId fields\"\n" + "}", HttpStatus.BAD_REQUEST);
 
 	}
 	
 	//Create a user
-	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> createUser(@Valid @RequestBody User user){
+	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE )
+	public ResponseEntity<?> createUser(@Valid @RequestBody(required=true) User user) throws QueriesException{
 		
 		User emailExists = userDao.emailExists(user.getEmail_address());
 		
@@ -80,19 +90,21 @@ public class UserController {
 			user.setAccount_created(LocalDateTime.now());
 			user.setAccount_updated(LocalDateTime.now());
 			
-			//Save in db
-			User userClass = userDao.save(user);
+			try {
+				//Save in db
+				User userClass = userDao.save(user);
+				return new ResponseEntity<>(userClass,HttpStatus.CREATED);
+			}catch (Exception e) {
+				throw new QueriesException("Internal SQL Server Error");
+			}
 			
-			return new ResponseEntity<>(userClass,HttpStatus.CREATED);
 		}
 		else
-		{
-			return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
-		}
+			return new ResponseEntity<>("{\n" + "\"error\":\"User with this email already exist\"\n" + "}",HttpStatus.BAD_REQUEST);
 		
 	}
 	
-	public User checkAuthentication(String authToken) {
+	public User checkAuthentication(String authToken) throws QueriesException{
 
 		// Remove BASIC from auth-token value
 		String[] splitToken = authToken.split("\\s+");
@@ -106,15 +118,19 @@ public class UserController {
 		String[] splitStringTok = tokenString.split(":");
 		String email_addressToken = splitStringTok[0];
 		String passwordToken = splitStringTok[1];
-				
-		User usernameExists = userDao.emailExists(email_addressToken);
 		
-		if(usernameExists != null && BCrypt.checkpw(passwordToken, usernameExists.getPassword())) {
+		try {
+			User usernameExists = userDao.emailExists(email_addressToken);
 			
-			return usernameExists;
-	
-		}
+			if(usernameExists != null && BCrypt.checkpw(passwordToken, usernameExists.getPassword())) {
+				
+				return usernameExists;
 		
+			}
+		}
+		catch (Exception e) {
+			throw new QueriesException("Internal SQL Server Error");
+		}
 		return null;
 	}
 	
