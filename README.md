@@ -15,6 +15,7 @@ Build and Deploy instructions for web application
 This is a maven build: Command to build is 
 	mvn clean install test
 
+# Maven
 Maven goals description - 
 	clean: removes any generated files
 	install: install the package locally
