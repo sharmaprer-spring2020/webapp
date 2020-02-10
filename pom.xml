@@ -35,15 +35,20 @@
             <artifactId>jbcrypt</artifactId>
 	    <version>0.3m</version>
         </dependency>
+        <!-- Dependency for file Upload -->
+        <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
         
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			</dependency>
+		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
-			</dependency>
+		</dependency>
 		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -2,19 +2,19 @@ package com.neu.edu.pojo;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -32,7 +32,7 @@ public class BillDbEntity {
 	@ReadOnlyProperty
 	@GeneratedValue(generator = "UUID2")
 	@GenericGenerator( name="UUID2", strategy = "uuid2")
-	@Column(name = "id", columnDefinition = "VARCHAR(36)")
+	@Column(name = "bill_id", columnDefinition = "VARCHAR(36)")
 	private String id;
 	
 	@Column
@@ -77,6 +77,11 @@ public class BillDbEntity {
 	@NotNull
 	@Enumerated(EnumType.STRING)
 	private PaymentStatus paymentStatus;
+	
+	@OneToOne(fetch=FetchType.LAZY,cascade=CascadeType.ALL, mappedBy="billDB")
+	//@OneToOne(fetch=FetchType.LAZY,cascade=CascadeType.ALL)
+	//@JoinColumn(name="file_id", referencedColumnName="id")
+	private File attachment;
 
 	public String getId() {
 		return id;
@@ -160,6 +165,15 @@ public class BillDbEntity {
 		this.paymentStatus = paymentStatus;
 	}
 	
+	
+	public File getAttachment() {
+		return attachment;
+	}
+
+	public void setAttachment(File attachment) {
+		this.attachment = attachment;
+	}
+
 	public BillDbEntity() {
 		
 	}
