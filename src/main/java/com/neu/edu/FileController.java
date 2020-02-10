@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -51,19 +53,15 @@ public class FileController {
 										 @RequestParam ("billAttachment") MultipartFile file) throws QueriesException {
 		
 		User userExists = checkAuthentication(authToken);
+		Optional<BillDbEntity> billDbEntity = billDao.findById(id);
 
 		if((file.getContentType().equals("image/png")) || file.getContentType().equals("application/pdf") || file.getContentType().equals("image/jpeg")) { //if valid file format
 			
 			if(userExists != null) {//isAuthorisedUser
-				
-				try {
-					Optional<BillDbEntity> billDbEntity = billDao.findById(id);
-					
+			
+				if(billDbEntity.isPresent()) {//is a valid Bill Id
 					if (billDbEntity.get().getAttachment() == null) { //Attachment already exists
-						
-						if(billDbEntity.isPresent()) {//is a valid Bill Id
-							
-							String localpath="./temp/"+id;
+						String localpath="./temp/"+id;
 								
 							byte[] bytes;
 							try{
@@ -76,10 +74,8 @@ public class FileController {
 								fileAttach.setFile_name(file.getOriginalFilename());
 								fileAttach.setUpload_date(LocalDate.now());
 								fileAttach.setUrl(pathDir.toString());
-									
-								BillDbEntity billDbEntityOpt = billDao.getOne(id);
-									
-								fileAttach.setBillDB(billDbEntityOpt);
+								fileAttach.setBillDB(billDbEntity.get());
+								
 								File savedFile = fileDao.save(fileAttach);
 								
 								return new ResponseEntity<>(savedFile,HttpStatus.CREATED);
@@ -89,18 +85,44 @@ public class FileController {
 							 }catch (Exception e) {
 									throw new QueriesException("Internal SQL Server Error");
 							 }
-						}
-						return new ResponseEntity<>("{\n" + "\"error\":\"Bill Not Found\"\n" + "}",HttpStatus.NOT_FOUND);
-					}
-					return new ResponseEntity<>("{\n" + "\"error\": \"bill already exists delete first to add new\"\n" + "}",HttpStatus.BAD_REQUEST);
-				}
-				catch (JpaSystemException e) {
-					return new ResponseEntity<>("{\n" + "\"error\": \"bill already exists delete first to add new\"\n" + "}",HttpStatus.BAD_REQUEST);
-				}
+					 }
+					 return new ResponseEntity<>("{\n" + "\"error\": \"bill already exists delete first to add new\"\n" + "}",HttpStatus.BAD_REQUEST);
+				 }
+				return new ResponseEntity<>("{\n" + "\"error\":\"Bill Id Not Found\"\n" + "}",HttpStatus.NOT_FOUND);
+			
 			}
 			return new ResponseEntity<>("{\n" + "\"error\": \"User does not exist\"\n" + "}",HttpStatus.BAD_REQUEST);
 		}
 		return new ResponseEntity<>("{\n" + "\"error\": \"Please provide attachment in either of the formats: png,jpeg,jpg or pdf\"\n" + "}",HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+	}
+	
+	@GetMapping(path ="/v1/bill/{billId}/file/{fileId}", produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getAllBills(@RequestHeader(value = "Authorization", required=true) String authToken,
+										 @PathVariable(required=true)String billId,
+										 @PathVariable(required=true)String fileId) throws QueriesException{
+		User userExists = checkAuthentication(authToken);
+		Optional<BillDbEntity> billDbEntityOpt = billDao.findById(billId);
+		Optional<File> fileEntity = fileDao.findById(fileId);
+		
+			if(userExists != null) { //isAuthorisedUser
+				
+				if (billDbEntityOpt.isPresent()) { //Bill id is valid
+					
+					if(fileEntity.isPresent()) { //file Id is valid
+						System.out.println("File bill ID value: "+fileEntity.get().getBillDB().getId());
+						System.out.println("bill ID value: "+billDbEntityOpt.get().getId());
+						if(fileEntity.get().getBillDB().getId().equals(billDbEntityOpt.get().getId())) {
+							return new ResponseEntity<>(fileEntity.get(),HttpStatus.OK);
+						}
+						return new ResponseEntity<>("{\n" + "\"error\":\"Cannot view other bills attachement\"\n" + "}",HttpStatus.BAD_REQUEST);
+					}
+					return new ResponseEntity<>("{\n" + "\"error\":\"File ID Not Found\"\n" + "}",HttpStatus.NOT_FOUND);			
+				}
+				else
+					return new ResponseEntity<>("{\n" + "\"error\":\"Bill ID Not Found\"\n" + "}",HttpStatus.NOT_FOUND);
+			}
+		
+		return new ResponseEntity<>("{\n" + "\"error\": \"Check username or password\"\n" + "}",HttpStatus.BAD_REQUEST);
 	}
 	
 	public User checkAuthentication(String authToken) throws QueriesException {
