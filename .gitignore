@@ -51,3 +51,8 @@ hs_err_pid*
 
 #For eclipse
 .settings/
+
+#For directory to store attachments
+temp/
+
+
