@@ -27,5 +27,19 @@ public class AllExceptionHandler {
 		
 		return error;
 	}
+	
+	@ExceptionHandler(FileException.class)
+	@ResponseStatus(value=HttpStatus.INTERNAL_SERVER_ERROR)
+	public @ResponseBody ExceptionResponse handleFileException(FileException ex, HttpServletRequest request  ) {
+		
+		ExceptionResponse error= new ExceptionResponse();
+		error.setMessage(ex.getMessage());
+		
+		error.setPath(request.getRequestURI());
+		error.setTimestamp(LocalDateTime.now());
+		error.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+		
+		return error;
+	}
 
 }
