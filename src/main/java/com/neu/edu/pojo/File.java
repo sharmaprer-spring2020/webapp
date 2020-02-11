@@ -47,6 +47,14 @@ public class File{
 	@OneToOne
 	@JoinColumn(name= "bill_id", nullable= false)
 	private BillDbEntity billDB;
+	
+	@Column
+	@JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
+	private String fileHash;
+	
+	@Column
+	@JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
+	private long fileSize_KB;
 
 	public String getId() {
 		return id;
@@ -86,6 +94,25 @@ public class File{
 
 	public void setBillDB(BillDbEntity billDbEntityOpt) {
 		this.billDB = billDbEntityOpt;
+	}
+
+	
+	public String getFileHash() {
+		return fileHash;
+	}
+
+	public void setFileHash(String fileHash) {
+		this.fileHash = fileHash;
+	}
+
+	
+
+	public long getFileSize_KB() {
+		return fileSize_KB;
+	}
+
+	public void setFileSize_KB(long fileSize_KB) {
+		this.fileSize_KB = fileSize_KB;
 	}
 
 	public File(String file_name,String url, LocalDate upload_date, String id) {

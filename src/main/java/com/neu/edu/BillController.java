@@ -72,6 +72,9 @@ public class BillController {
 			
 			try {
 				List<BillDbEntity> billList = billDao.getBillsByOwnerId(userExists.getId());
+				if(billList.isEmpty()) {
+					return new ResponseEntity<>("{\n" + "\"message\": \"no bills for this user\"\n" + "}",HttpStatus.OK);
+				}
 				return new ResponseEntity<>(billList,HttpStatus.OK);
 			}catch(Exception e) {
 				throw new QueriesException("Internal SQL Server Error");
