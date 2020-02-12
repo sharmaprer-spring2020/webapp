@@ -20,17 +20,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Entity
 public class File{
 	
+	@Column
+	@NotNull
+	@ReadOnlyProperty
+	private String file_name;
+	
 	@Id
 	@ReadOnlyProperty
 	@GeneratedValue(generator = "UUID2")
 	@GenericGenerator( name="UUID2", strategy = "uuid2")
 	@Column(name = "id", columnDefinition = "VARCHAR(36)")
 	private String id;
-	
-	@Column
-	@NotNull
-	@ReadOnlyProperty
-	private String file_name;
 	
 	@Column
 	@NotNull
@@ -42,7 +42,6 @@ public class File{
 	@ReadOnlyProperty
 	private LocalDate upload_date;
 	
-	//@OneToOne(mappedBy="attachment")
 	@JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
 	@OneToOne
 	@JoinColumn(name= "bill_id", nullable= false)
@@ -50,7 +49,7 @@ public class File{
 	
 	@Column
 	@JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
-	private String fileHash;
+	private String fileHash_md5;
 	
 	@Column
 	@JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
@@ -96,16 +95,13 @@ public class File{
 		this.billDB = billDbEntityOpt;
 	}
 
-	
-	public String getFileHash() {
-		return fileHash;
+	public String getFileHash_md5() {
+		return fileHash_md5;
 	}
 
-	public void setFileHash(String fileHash) {
-		this.fileHash = fileHash;
+	public void setFileHash_md5(String fileHash_md5) {
+		this.fileHash_md5 = fileHash_md5;
 	}
-
-	
 
 	public long getFileSize_KB() {
 		return fileSize_KB;

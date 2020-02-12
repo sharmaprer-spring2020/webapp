@@ -25,4 +25,3 @@ We are using Maven so run the following command
 - `install`: install the package locally
 - `test`: test unit tests for the code
 
-Updating

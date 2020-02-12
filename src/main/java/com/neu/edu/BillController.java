@@ -60,7 +60,7 @@ public class BillController {
 				 throw new QueriesException("Internal SQL Server Error");
 			   }
 		    }
-	   return new ResponseEntity<>("{\n" + "\"error\": \"User does not exist\"\n" + "}",HttpStatus.BAD_REQUEST);
+	   return new ResponseEntity<>("{\n" + "\"error\": \"User not authenticated\"\n" + "}",HttpStatus.BAD_REQUEST);
 	}
 	
 	@GetMapping(path ="/v1/bills", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -81,7 +81,7 @@ public class BillController {
 			}
 			
 		} 
-		return new ResponseEntity<>("{\n" + "\"error\": \"Check username or password\"\n" + "}",HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<>("{\n" + "\"error\": \"Not authenticated\"\n" + "}",HttpStatus.BAD_REQUEST);
 		
 	 }
 	

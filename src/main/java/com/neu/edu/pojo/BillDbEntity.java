@@ -78,9 +78,7 @@ public class BillDbEntity {
 	@Enumerated(EnumType.STRING)
 	private PaymentStatus paymentStatus;
 	
-	@OneToOne(fetch=FetchType.LAZY,cascade=CascadeType.ALL, mappedBy="billDB")
-	//@OneToOne(fetch=FetchType.LAZY,cascade=CascadeType.ALL)
-	//@JoinColumn(name="file_id", referencedColumnName="id")
+	@OneToOne(fetch=FetchType.LAZY, mappedBy="billDB")
 	private File attachment;
 
 	public String getId() {
