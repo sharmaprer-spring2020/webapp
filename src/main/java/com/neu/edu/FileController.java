@@ -1,9 +1,5 @@
 package com.neu.edu;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
@@ -32,6 +28,7 @@ import com.neu.edu.pojo.BillDbEntity;
 import com.neu.edu.pojo.File;
 import com.neu.edu.pojo.User;
 import com.neu.edu.services.AuthenticationService;
+import com.neu.edu.services.S3Services;
 
 @RestController
 public class FileController {
@@ -42,6 +39,9 @@ public class FileController {
 	@Autowired
 	private AuthenticationService authService;
 	
+	@Autowired
+	private S3Services s3Service;
+	
 	@PostMapping(path ="/v1/bill/{id}/file", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> attachFile(@RequestHeader(value = "Authorization", required=true) String authToken, 
 										@PathVariable(required=true)String id,
@@ -51,33 +51,33 @@ public class FileController {
 		authService.validateFileType(file);
 		BillDbEntity billDbEntity = authService.validateBillId(userExists,id);
 		authService.FileExists(billDbEntity);
-		String localpath = createDir();
+		
 		byte[] bytes;
 		try{
 			bytes = file.getBytes();
+			String fileName = id + "_" + file.getOriginalFilename();
+			boolean uploaded = s3Service.addFile(bytes, fileName);
+			if(uploaded) {
+				File fileAttach = new File();
+				fileAttach.setFile_name(fileName);
+				fileAttach.setUpload_date(LocalDate.now());
+				fileAttach.setUrl(System.getenv("BUCKET_NAME") + "/" +  fileName);
+				fileAttach.setBillDB(billDbEntity);
 
-			Path pathDir = Paths.get(localpath + "/" + id + "_" + file.getOriginalFilename());
+				String md5 = DigestUtils.md5DigestAsHex(bytes);
+				fileAttach.setFileHash_md5(md5);
+				fileAttach.setFileSize_KB((file.getSize()));
+				File savedFile = fileDao.save(fileAttach);
 
-			Files.write(pathDir, bytes);
-
-			File fileAttach = new File();
-			fileAttach.setFile_name(file.getOriginalFilename());
-			fileAttach.setUpload_date(LocalDate.now());
-			fileAttach.setUrl(pathDir.toString());
-			fileAttach.setBillDB(billDbEntity);
-
-			String md5 = DigestUtils.md5DigestAsHex(bytes);
-			fileAttach.setFileHash_md5(md5);
-			fileAttach.setFileSize_KB((file.getSize()));
-			File savedFile = fileDao.save(fileAttach);
-
-			return new ResponseEntity<>(savedFile, HttpStatus.CREATED);
-									
-			}catch (IOException e1) {
-				throw new QueriesException("Internal File IO exception");
-			}catch (Exception e) {
-				throw new QueriesException("Internal SQL Server Error");
+				return new ResponseEntity<>(savedFile, HttpStatus.CREATED);
 			}
+			else {
+				throw new FileException("File could not be added into S3");
+			}
+		}
+		catch (Exception e) {
+			throw new QueriesException("Internal SQL Server Error");
+		}
 	}
 
 	
@@ -102,33 +102,20 @@ public class FileController {
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateBillId(userExists,billId);
 		File fileEntityOpt = authService.validateFileId(userExists, billId, fileId);
-			try {
-				String filePath = fileEntityOpt.getUrl();
-				Path pathDir = Paths.get(filePath);
-				Files.deleteIfExists(pathDir); //Remove file from local
+		try {
+			String fileName = fileEntityOpt.getFile_name();
+			boolean deletedFromS3 = s3Service.deleteFile(fileName);
+			if(deletedFromS3) {
 				fileDao.deleteById(fileId); // Delete attachment
-				
 				return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
-				
-			}catch (IOException e1) {
-				throw new FileException("Internal File IO exception");
-			}catch (Exception e) {
-				throw new QueriesException("Internal SQL Server Error");
 			}
+			else {
+				throw new FileException("File could not be deleted from S3");
+			}
+		
+		}catch (Exception e) {
+			throw new QueriesException("Internal SQL Server Error");
+		}
 	}
 	
-	public String createDir() throws FileException {
-
-		Path dirLoc = Paths.get(Paths.get("./temp")+"/");
-		boolean dirExists = Files.exists(dirLoc);
-		if(!dirExists) {
-			try {
-				Files.createDirectories(dirLoc);
-			}catch (IOException e) {
-				throw new FileException("Directory not found");
-			}
-		}
-		return dirLoc.toString();
-		
-	}
 }
