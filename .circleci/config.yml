@@ -24,11 +24,7 @@ jobs:
         command: aws s3 sync ./codedeploy_artifact s3://${S3_CODEDEPLOY_BUCKET}
     - run:
         name: Code Deploy API Call
-        command: aws deploy create-deployment \
-                 --application-name csye6225-webapp \
-                 --deployment-group-name csye6225-webapp-deployment \
-                 --description "My demo deployment" \
-                 --s3-location bucket=${S3_CODEDEPLOY_BUCKET},bundleType=zip,key=csye6225-webapp-${CIRCLE_BUILD_NUM}.zip
+        command: aws deploy create-deployment --application-name csye6225-webapp --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=${S3_CODEDEPLOY_BUCKET},bundleType=zip,key=csye6225-webapp-${CIRCLE_BUILD_NUM}.zip
 
   build_deploy:
     docker:
