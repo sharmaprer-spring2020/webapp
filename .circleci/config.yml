@@ -4,9 +4,15 @@ jobs:
   pr_check:
     docker:
       - image: circleci/openjdk:8-jdk
-      - image: maven
+      - image: circleci/maven
+      - image: circleci/python
     steps:
     - checkout #check out source code
+    - run:
+        name: Install packages
+        command: sudo apt-get update &&
+                 sudo apt-get install -y python-pip &&
+                 sudo pip install awscli
     - run:
         name: maven build
         command: mvn clean install test
@@ -25,9 +31,12 @@ workflows:
   pr-check-workflow:
     jobs:
     - pr_check
+    filters:
+          branches:
+            only: feature/assignment7
   build-deploy-workflow:
     jobs:
     - build_deploy:
         filters:
           branches:
-            only: master
+            only: feature/assignment7
