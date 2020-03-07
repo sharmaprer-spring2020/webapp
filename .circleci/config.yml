@@ -30,7 +30,7 @@ workflows:
   version: 2
   pr-check-workflow:
     jobs:
-    - pr_check
+    - pr_check:
     filters:
           branches:
             only: feature/assignment7
