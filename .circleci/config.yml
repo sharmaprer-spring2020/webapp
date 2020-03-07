@@ -4,8 +4,7 @@ jobs:
   pr_check:
     docker:
       - image: circleci/openjdk:8-jdk
-      - image: circleci/maven
-      - image: circleci/python
+      - image: maven
     steps:
     - checkout #check out source code
     - run:
