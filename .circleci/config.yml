@@ -31,7 +31,7 @@ workflows:
   pr-check-workflow:
     jobs:
     - pr_check:
-    filters:
+        filters:
           branches:
             only: feature/assignment7
   build-deploy-workflow:
