@@ -14,13 +14,18 @@ jobs:
                  sudo pip install awscli
     - run:
         name: maven build
-        command: mvn clean install test
+        command: mvn clean install test && pwd && ls -al && ls -al target/
   build_deploy:
     docker:
       - image: circleci/openjdk:8-jdk
       - image: maven
     steps:
     - checkout #check out source code
+    - run:
+        name: Install packages
+        command: sudo apt-get update &&
+                 sudo apt-get install -y python-pip &&
+                 sudo pip install awscli
     - run:
         name: maven build
         command: mvn clean install test
