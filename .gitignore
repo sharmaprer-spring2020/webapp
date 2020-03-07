@@ -55,4 +55,8 @@ hs_err_pid*
 #For directory to store attachments
 temp/
 
+# Ionide (cross platform F# VS Code tools) working folder
+.ionide/
+
+.DS_Store
 
