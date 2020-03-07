@@ -15,6 +15,13 @@ jobs:
     - run:
         name: maven build
         command: mvn clean install test && pwd && ls -al && ls -al target/
+    - run:
+        name: Build deployment artifact
+        command: mkdir codedeploy_artifact && \
+                 zip -r csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.war codedeploy/*.sh appspec.yml && \
+                 pwd && ls -al && mv csye6225-webapp-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/ && \
+                 ls -al && pwd && cd codedeploy_artifact && pwd && ls -al && cd .. && pwd && ls -al
+
   build_deploy:
     docker:
       - image: circleci/openjdk:8-jdk
@@ -28,7 +35,7 @@ jobs:
                  sudo pip install awscli
     - run:
         name: maven build
-        command: mvn clean install test
+        command: mvn clean install test && pwd && ls -al && ls -al target/
     
 workflows:
   version: 2
