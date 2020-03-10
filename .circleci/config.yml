@@ -63,4 +63,4 @@ workflows:
     - build_deploy:
         filters:
           branches:
-            only: feature/assignment7
+            only: master
