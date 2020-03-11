@@ -22,11 +22,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.neu.edu.dao.BillDao;
+import com.neu.edu.dao.FileDao;
 import com.neu.edu.dao.UserDao;
+import com.neu.edu.exception.FileException;
 import com.neu.edu.exception.QueriesException;
 import com.neu.edu.pojo.Bill;
 import com.neu.edu.pojo.BillDbEntity;
 import com.neu.edu.pojo.User;
+import com.neu.edu.services.S3Services;
 
 
 @RestController
@@ -37,6 +40,12 @@ public class BillController {
 	
 	@Autowired
 	private UserDao userDao;
+	
+	@Autowired
+	private S3Services s3Service;
+	
+	@Autowired
+	private FileDao fileDao;
 	
 	
 	@PostMapping(path ="/v1/bill/", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
@@ -101,7 +110,15 @@ public class BillController {
 					if(billEntity.getOwner_id().equals(userExists.getId())) { //Bill has valid owner
 						
 						billDao.deleteById(id);
-						return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+						String fileName = billEntity.getAttachment().getFile_name();
+						boolean deletedFromS3 = s3Service.deleteFile(fileName);
+						if(deletedFromS3) {
+							fileDao.deleteById(billEntity.getAttachment().getId()); // Delete attachment
+							return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+						}
+						else {
+							throw new FileException("File could not be deleted from S3");
+						}									
 					}
 					else
 						return new ResponseEntity<>("{\n" + "\"error\":\"Not authorized to delete this bill ID\"\n" + "}",HttpStatus.UNAUTHORIZED);

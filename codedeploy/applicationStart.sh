@@ -1,7 +1,7 @@
 #!/bin/bash
-echo "In application Start.sh"
+echo "Initiate Stop tomcat service"
 sudo systemctl stop tomcat.service && 
 sudo systemctl daemon-reload && 
 sudo systemctl start tomcat.service
 
-echo "executed tomcat start stop"
+echo "tomcat is now started"
