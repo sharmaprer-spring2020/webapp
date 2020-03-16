@@ -72,7 +72,7 @@ public class BillController {
 	   return new ResponseEntity<>("{\n" + "\"error\": \"User not authenticated\"\n" + "}",HttpStatus.BAD_REQUEST);
 	}
 	
-	@GetMapping(path ="/v1/bills", produces=MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(path ="/v2/bills", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getAllBills(@RequestHeader(value = "Authorization", required=true) String authToken)throws QueriesException{
 		
 		User userExists = checkAuthentication(authToken);
