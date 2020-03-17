@@ -27,7 +27,7 @@ jobs:
                  sudo pip install awscli
     - run:
         name: maven build
-        command: mvn clean install test && pwd && ls -al && ls -al target/
+        command: mvn clean install -DskipTests && pwd && ls -al && ls -al target/
     - run:
         name: Build deployment artifact
         command: mkdir codedeploy_artifact &&
