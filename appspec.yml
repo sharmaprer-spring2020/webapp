@@ -4,6 +4,8 @@ os: linux
 files:
   - source: ./target/ROOT.war
     destination: /opt/tomcat8/webapps
+  - source: ./cloudwatch-config.json
+    destination: /home/ubuntu/
 
 hooks:
   ApplicationStop:
