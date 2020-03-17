@@ -6,6 +6,8 @@ import java.util.Base64;
 import javax.validation.Valid;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,22 +20,40 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.neu.edu.dao.UserDao;
+import com.neu.edu.exception.CloudWatchExceptionHandler;
 import com.neu.edu.exception.QueriesException;
 import com.neu.edu.pojo.User;
-
+import com.timgroup.statsd.NonBlockingStatsDClient;
 
 @RestController
 public class UserController {
 	
+	private final static Logger logger = LoggerFactory.getLogger(UserController.class);
+	private static final int STATSD_SERVER_PORT = 8125;
+
+	
 	@Autowired
 	UserDao userDao;
 	
+	@Autowired
+	CloudWatchExceptionHandler cloudWatchHandler;
+	
+	private final NonBlockingStatsDClient client = new NonBlockingStatsDClient("my.prefix", "3.234.228.239", STATSD_SERVER_PORT, cloudWatchHandler);
+	//@Autowired
+	//private StatsDClient statsDClient;
+	
 	//Get user Information
 	@GetMapping(path ="v1/user/self", produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Object> getUserInfo(@RequestHeader(value = "Authorization",required=true) String authToken) throws QueriesException{
-	
-		User authenticatedUser = checkAuthentication(authToken);
+	public ResponseEntity<Object> getUserInfo(@RequestHeader(value = "Authorization",required=false) String authToken) throws QueriesException{
+		//logger.warn("This is prerna sharma");
+		//logger.debug("This is prerna sharma debug");
+		logger.trace("This is prerna sharma trace");
 		
+		//statsDClient.incrementCounter("getUser");
+		User authenticatedUser = checkAuthentication(authToken);
+		logger.warn("This is prerna sharma");
+		
+		logger.warn("This is prerna sharma in trace mode");
 		if(authenticatedUser != null) {
 			return new ResponseEntity<>(authenticatedUser,HttpStatus.OK);
 		}
@@ -79,7 +99,15 @@ public class UserController {
 	//Create a user
 	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE )
 	public ResponseEntity<?> createUser(@Valid @RequestBody(required=true) User user) throws QueriesException{
-		
+		client.incrementCounter("endpoint.createUser.http.post");
+		client.incrementCounter("path:/v1/user");
+		client.set("uniqueRequest.count", "path:/v1/user");
+		logger.trace("This is prerna sharma trace");
+		logger.warn("This is prerna sharma warn");
+		logger.error("This is error");
+		//client.count("saveUser", 2);
+		//server.waitForMessage();
+		//System.out.println(server.messagesReceived.toString());
 		User emailExists = userDao.emailExists(user.getEmail_address());
 		
 		if(emailExists == null) {
@@ -134,5 +162,4 @@ public class UserController {
 		return null;
 	}
 	
-
 }
