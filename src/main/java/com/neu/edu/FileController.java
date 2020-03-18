@@ -48,7 +48,7 @@ public class FileController {
 	@Autowired
 	private StatsDClient statsDClient;
 	
-	private final static Logger logger = LoggerFactory.getLogger(UserController.class);
+	private final static Logger logger = LoggerFactory.getLogger(FileController.class);
 	
 	@PostMapping(path ="/v1/bill/{id}/file", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> attachFile(@RequestHeader(value = "Authorization", required=true) String authToken, 
