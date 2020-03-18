@@ -20,41 +20,34 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.neu.edu.dao.UserDao;
-import com.neu.edu.exception.CloudWatchExceptionHandler;
 import com.neu.edu.exception.QueriesException;
 import com.neu.edu.pojo.User;
-import com.timgroup.statsd.NonBlockingStatsDClient;
+import com.timgroup.statsd.StatsDClient;
 
 @RestController
 public class UserController {
 	
 	private final static Logger logger = LoggerFactory.getLogger(UserController.class);
-	private static final int STATSD_SERVER_PORT = 8125;
-
 	
 	@Autowired
 	UserDao userDao;
-	
+
 	@Autowired
-	CloudWatchExceptionHandler cloudWatchHandler;
-	
-	private final NonBlockingStatsDClient client = new NonBlockingStatsDClient("my.prefix", "3.234.228.239", STATSD_SERVER_PORT, cloudWatchHandler);
-	//@Autowired
-	//private StatsDClient statsDClient;
+	private StatsDClient statsDClient;
+
 	
 	//Get user Information
 	@GetMapping(path ="v1/user/self", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> getUserInfo(@RequestHeader(value = "Authorization",required=false) String authToken) throws QueriesException{
-		//logger.warn("This is prerna sharma");
-		//logger.debug("This is prerna sharma debug");
-		logger.trace("This is prerna sharma trace");
-		
-		//statsDClient.incrementCounter("getUser");
+		logger.debug("Entered getUser ");
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.user.self.api.get");
+		logger.debug("endpoint.v1.user.self.api.get");
 		User authenticatedUser = checkAuthentication(authToken);
-		logger.warn("This is prerna sharma");
-		
-		logger.warn("This is prerna sharma in trace mode");
 		if(authenticatedUser != null) {
+			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.user.self.api.get - execution time : " + String.valueOf(end-start));
+			statsDClient.recordExecutionTime("endpoint.v1.user.self.api.get", end-start);
 			return new ResponseEntity<>(authenticatedUser,HttpStatus.OK);
 		}
 		else {
@@ -67,7 +60,10 @@ public class UserController {
 	@PutMapping(path="/v1/user/self",consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> updateUser(@RequestHeader(value = "Authorization",required=true) String authToken,
 										@Valid @RequestBody(required=true) User user) throws QueriesException{
-	
+		logger.debug("Entered put User ");
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.user.self.api.put");
+		logger.debug("endpoint.v1.user.self.api.put");
 		if(user.getAccount_created() == null && user.getAccount_updated()==null && user.getId()==null) {
 			
 			User authenticatedUser = checkAuthentication(authToken);
@@ -78,16 +74,25 @@ public class UserController {
 				String newHashPw = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
 				
 				try {
+					long dbStart = System.currentTimeMillis();
 					int updateStatus = userDao.updateUser(user.getFirst_name(), 
 														  user.getLast_name(), 
 														  newHashPw, 
 														  accountUpdated,
 														  authenticatedUser.getEmail_address());
+					long dbEnd = System.currentTimeMillis();
+					statsDClient.recordExecutionTime("endpoint.v1.user.self.api.db.put", dbEnd-dbStart);
 					if (updateStatus == 1) {
 						return new ResponseEntity<>("{\n" + "\"success\":\"User details Updated\"\n" + "}", HttpStatus.NO_CONTENT);
 					}
 				}catch (Exception e) {
+					logger.error(e.getMessage(), e);
 					throw new QueriesException("Internal SQL Server Error");
+				}
+				finally {
+					long end = System.currentTimeMillis();
+					logger.debug("endpoint.v1.user.self.api.put - execution time" +String.valueOf(end-start));
+					statsDClient.recordExecutionTime("endpoint.v1.user.self.api.put", end-start);
 				}
 			}
 				return new ResponseEntity<>("{\n" + "\"error\":\"Username or password is incorrect\"\n" + "}", HttpStatus.UNAUTHORIZED);
@@ -99,15 +104,12 @@ public class UserController {
 	//Create a user
 	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE )
 	public ResponseEntity<?> createUser(@Valid @RequestBody(required=true) User user) throws QueriesException{
-		client.incrementCounter("endpoint.createUser.http.post");
-		client.incrementCounter("path:/v1/user");
-		client.set("uniqueRequest.count", "path:/v1/user");
-		logger.trace("This is prerna sharma trace");
-		logger.warn("This is prerna sharma warn");
-		logger.error("This is error");
-		//client.count("saveUser", 2);
-		//server.waitForMessage();
-		//System.out.println(server.messagesReceived.toString());
+		
+		logger.debug("Entered createUser with User : " + user.toString());
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.user.api.post");
+		logger.debug("incremented statsDClient for endpoint.v1.user.api.post");
+		
 		User emailExists = userDao.emailExists(user.getEmail_address());
 		
 		if(emailExists == null) {
@@ -119,11 +121,19 @@ public class UserController {
 			user.setAccount_updated(LocalDateTime.now());
 			
 			try {
+				long dbStart = System.currentTimeMillis();
 				//Save in db
 				User userClass = userDao.save(user);
+				long dbEnd = System.currentTimeMillis();
+				statsDClient.recordExecutionTime("endpoint.v1.user.api.db.post", dbEnd-dbStart);
 				return new ResponseEntity<>(userClass,HttpStatus.CREATED);
 			}catch (Exception e) {
+				logger.error(e.getMessage(), e);
 				throw new QueriesException("Internal SQL Server Error");
+			}finally {
+				long end = System.currentTimeMillis();
+				logger.debug("endpoint.v1.user.api.post - execution time : " + String.valueOf(end-start));
+				statsDClient.recordExecutionTime("endpoint.v1.user.api.post", end-start);
 			}
 			
 		}
