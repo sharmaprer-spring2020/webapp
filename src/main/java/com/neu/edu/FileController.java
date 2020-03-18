@@ -3,6 +3,8 @@ package com.neu.edu;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,12 +48,16 @@ public class FileController {
 	@Autowired
 	private StatsDClient statsDClient;
 	
+	private final static Logger logger = LoggerFactory.getLogger(UserController.class);
+	
 	@PostMapping(path ="/v1/bill/{id}/file", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> attachFile(@RequestHeader(value = "Authorization", required=true) String authToken, 
 										@PathVariable(required=true)String id,
 										@RequestParam ("billAttachment") MultipartFile file) throws QueriesException, FileException, SQLException, ValidationException, IdValidationException, FileTypeException, FileExistsExeption {
+		logger.debug("Entered attach file ");
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bill.billId.file.api.post");
+		logger.debug("endpoint.v1.bill.billId.file.api.post");
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateFileType(file);
 		BillDbEntity billDbEntity = authService.validateBillId(userExists,id);
@@ -86,9 +92,11 @@ public class FileController {
 			}
 		}
 		catch (Exception e) {
+			logger.error(e.getMessage(), e);
 			throw new QueriesException("Internal SQL Server Error");
 		}finally {
 			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.user.api.post- execution time" +String.valueOf(end-start));			
 			statsDClient.recordExecutionTime("endpoint.v1.user.api.post", end-start);
 		}
 	}
@@ -98,12 +106,15 @@ public class FileController {
 	public ResponseEntity<?> getByFileId(@RequestHeader(value = "Authorization", required=true) String authToken,
 										 @PathVariable(required=true)String billId,
 										 @PathVariable(required=true)String fileId) throws QueriesException, SQLException, IdValidationException, ValidationException{
+		logger.debug("Entered get file");
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bill.billId.file.fileId.api.get");
+		logger.debug("incremented endpoint.v1.bill.billId.file.fileId.api.get");
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateBillId(userExists,billId);
 		File fileEntityOpt = authService.validateFileId(userExists, billId, fileId);
 		long end = System.currentTimeMillis();
+		logger.debug("endpoint.v1.bill.billId.file.fileId.api.get - execution time" +String.valueOf(end-start));
 		statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.fileId.api.get", end-start);
 		return new ResponseEntity<>(fileEntityOpt,HttpStatus.OK);
 			
@@ -113,8 +124,10 @@ public class FileController {
 	public ResponseEntity<Object> delAttachmentbyFileId(@RequestHeader(value = "Authorization",required=true) String authToken, 
 											     		@PathVariable(required=true)String billId,
 											     		@PathVariable(required=true)String fileId) throws FileException, SQLException, ValidationException, IdValidationException, QueriesException{
+		logger.debug("Entered delete attachment");
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bill.billId.file.fileId.api.delete");
+		logger.debug("incremented endpoint.v1.bill.billId.file.fileId.api.delete");
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateBillId(userExists,billId);
 		File fileEntityOpt = authService.validateFileId(userExists, billId, fileId);
@@ -139,6 +152,7 @@ public class FileController {
 			throw new QueriesException("Internal SQL Server Error");
 		}finally {
 			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.bill.billId.file.fileId.api.delete" +String.valueOf(end-start));
 			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.fileId.api.delete", end-start);
 		}
 	}

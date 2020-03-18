@@ -59,8 +59,10 @@ public class BillController {
 	@PostMapping(path ="/v1/bill/", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> createBills(@RequestHeader(value = "Authorization", required=true) String authToken, 
 										 @Valid @RequestBody(required=true) Bill bill) throws QueriesException{
+		logger.debug("Entered create bill");
 		long start = System.currentTimeMillis();
-		statsDClient.incrementCounter("endpoint.v1.bill.api.post");				
+		statsDClient.incrementCounter("endpoint.v1.bill.api.post");		
+		logger.debug("incremented endpoint.v1.bill.api.post");
 			User userExists = checkAuthentication(authToken);
 			
 			if(userExists != null) {
@@ -81,6 +83,7 @@ public class BillController {
 				 throw new QueriesException("Internal SQL Server Error");
 			   }finally {
 				   long end = System.currentTimeMillis();
+				   logger.debug("endpoint.v1.bill.api.post - execution time: "+String.valueOf(end-start));
 				   statsDClient.recordExecutionTime("endpoint.v1.bill.api.post", end-start);
 			   }
 		    }
@@ -90,8 +93,10 @@ public class BillController {
 	@GetMapping(path ="/v1/bills", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getAllBills(@RequestHeader(value = "Authorization", required=true) String authToken)throws QueriesException{
 		
+		logger.debug("Entered get all bills");
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bills.api.get");
+		logger.debug("incremented endpoint.v1.bills.api.get");
 		User userExists = checkAuthentication(authToken);
 		
 		if(userExists != null) {
@@ -106,6 +111,7 @@ public class BillController {
 				throw new QueriesException("Internal SQL Server Error");
 			}finally {
 				long end = System.currentTimeMillis();
+				logger.debug("endpoint.v1.bills.api.get - Execution time: "+String.valueOf(end-start));
 				statsDClient.recordExecutionTime("endpoint.v1.bills.api.get", end-start);
 			}
 			
@@ -117,8 +123,10 @@ public class BillController {
 	@DeleteMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteBillbyId(@RequestHeader(value = "Authorization",required=true) String authToken, 
 											     @PathVariable(required=true)String id) throws QueriesException{
+		logger.debug("Enterered delete bill with id: "+id);
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bill.billId.api.delete");
+		logger.debug("incremented endpoint.v1.bill.billId.api.delete");
 		User userExists = checkAuthentication(authToken);
 		try {
 			Optional<BillDbEntity> billDbEntityOpt = billDao.findById(id);
@@ -160,6 +168,7 @@ public class BillController {
 			throw new QueriesException("Internal SQL Server Error");
 		}finally {
 			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.bill.billId.api.delete - Execution time: "+String.valueOf(end-start));
 			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.delete", end-start);
 		}
 		return new ResponseEntity<>("{\n" + "\"error\":\"Not authenticated\"\n" + "}",HttpStatus.UNAUTHORIZED);
@@ -168,8 +177,10 @@ public class BillController {
 	@GetMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getBillById(@RequestHeader(value = "Authorization",required=true) String authToken, 
 										 @PathVariable(required=true)String id) throws QueriesException{
+		logger.debug("Entered get bill with id: "+id);
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bill.billId.api.get");
+		logger.debug("incremented endpoint.v1.bill.billId.api.get");
 		User userExists = checkAuthentication(authToken);
 		
 		try {
@@ -195,6 +206,7 @@ public class BillController {
 			throw new QueriesException("Internal SQL Server Error");
 		}finally {
 			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.bill.billId.api.get - Execution time: "+String.valueOf(end-start));
 			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.get", end-start);
 		}
 	    return new ResponseEntity<>("{\n" + "\"error\":\"Not authenticated\"\n" + "}",HttpStatus.UNAUTHORIZED);
@@ -204,8 +216,10 @@ public class BillController {
 	public ResponseEntity<?> upadateBillbyId(@RequestHeader(value = "Authorization",required=true) String authToken, 
 											 @PathVariable(required=true)String id,
 											 @Valid @RequestBody(required=true) Bill bill) throws QueriesException{
+		logger.debug("Entered put bill for id: "+id);
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.bill.billId.api.put");
+		logger.debug("implemented endpoint.v1.bill.billId.api.put");
 	  if(bill.getOwner_id() == null && bill.getId()==null && bill.getCreated_ts()==null && bill.getUpdated_ts()==null) { 
 		  
 		User userExists = checkAuthentication(authToken);
@@ -219,7 +233,6 @@ public class BillController {
 					BillDbEntity billEntity = billDbEntityOpt.get();
 					
 					if(billEntity.getOwner_id().equals(userExists.getId())) { //Bill has valid owner
-						
 						
 						billEntity.setVendor(bill.getVendor());
 						billEntity.setBill_date(bill.getBill_date());
@@ -250,6 +263,7 @@ public class BillController {
 			throw new QueriesException("Internal SQL Server Error");	
 		}finally {
 			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.bill.billId.api.put - Execution time: "+String.valueOf(end-start));
 			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.put", end-start);
 		}
 		return new ResponseEntity<>("{\n" + "\"error\":\"Not authorized\"\n" + "}",HttpStatus.UNAUTHORIZED);

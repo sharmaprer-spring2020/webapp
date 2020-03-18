@@ -39,11 +39,14 @@ public class UserController {
 	//Get user Information
 	@GetMapping(path ="v1/user/self", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> getUserInfo(@RequestHeader(value = "Authorization",required=false) String authToken) throws QueriesException{
+		logger.debug("Entered getUser ");
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.user.self.api.get");
+		logger.debug("endpoint.v1.user.self.api.get");
 		User authenticatedUser = checkAuthentication(authToken);
 		if(authenticatedUser != null) {
 			long end = System.currentTimeMillis();
+			logger.debug("endpoint.v1.user.self.api.get - execution time : " + String.valueOf(end-start));
 			statsDClient.recordExecutionTime("endpoint.v1.user.self.api.get", end-start);
 			return new ResponseEntity<>(authenticatedUser,HttpStatus.OK);
 		}
@@ -57,8 +60,10 @@ public class UserController {
 	@PutMapping(path="/v1/user/self",consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> updateUser(@RequestHeader(value = "Authorization",required=true) String authToken,
 										@Valid @RequestBody(required=true) User user) throws QueriesException{
+		logger.debug("Entered put User ");
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.user.self.api.put");
+		logger.debug("endpoint.v1.user.self.api.put");
 		if(user.getAccount_created() == null && user.getAccount_updated()==null && user.getId()==null) {
 			
 			User authenticatedUser = checkAuthentication(authToken);
@@ -81,10 +86,12 @@ public class UserController {
 						return new ResponseEntity<>("{\n" + "\"success\":\"User details Updated\"\n" + "}", HttpStatus.NO_CONTENT);
 					}
 				}catch (Exception e) {
+					logger.error(e.getMessage(), e);
 					throw new QueriesException("Internal SQL Server Error");
 				}
 				finally {
 					long end = System.currentTimeMillis();
+					logger.debug("endpoint.v1.user.self.api.put - execution time" +String.valueOf(end-start));
 					statsDClient.recordExecutionTime("endpoint.v1.user.self.api.put", end-start);
 				}
 			}
@@ -98,8 +105,10 @@ public class UserController {
 	@PostMapping(path="/v1/user", consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE )
 	public ResponseEntity<?> createUser(@Valid @RequestBody(required=true) User user) throws QueriesException{
 		
+		logger.debug("Entered createUser with User : " + user.toString());
 		long start = System.currentTimeMillis();
 		statsDClient.incrementCounter("endpoint.v1.user.api.post");
+		logger.debug("incremented statsDClient for endpoint.v1.user.api.post");
 		
 		User emailExists = userDao.emailExists(user.getEmail_address());
 		
@@ -119,9 +128,11 @@ public class UserController {
 				statsDClient.recordExecutionTime("endpoint.v1.user.api.db.post", dbEnd-dbStart);
 				return new ResponseEntity<>(userClass,HttpStatus.CREATED);
 			}catch (Exception e) {
+				logger.error(e.getMessage(), e);
 				throw new QueriesException("Internal SQL Server Error");
 			}finally {
 				long end = System.currentTimeMillis();
+				logger.debug("endpoint.v1.user.api.post - execution time : " + String.valueOf(end-start));
 				statsDClient.recordExecutionTime("endpoint.v1.user.api.post", end-start);
 			}
 			
