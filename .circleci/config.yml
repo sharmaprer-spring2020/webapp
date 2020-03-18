@@ -12,7 +12,7 @@ jobs:
         command: sudo apt-get update && sudo apt-get install -y zip && sudo apt-get install -y python-pip && sudo pip install awscli && aws --version
     - run:
         name: maven build
-        command: mvn clean install -DskipTests && pwd && ls -al && ls -al target/
+        command: mvn clean install && pwd && ls -al && ls -al target/
 
   build_deploy:
     docker:
@@ -27,7 +27,7 @@ jobs:
                  sudo pip install awscli
     - run:
         name: maven build
-        command: mvn clean install -DskipTests && pwd && ls -al && ls -al target/
+        command: mvn clean install && pwd && ls -al && ls -al target/
     - run:
         name: Build deployment artifact
         command: mkdir codedeploy_artifact &&

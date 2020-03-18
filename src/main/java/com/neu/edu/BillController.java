@@ -8,6 +8,8 @@ import java.util.Optional;
 import javax.validation.Valid;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +32,7 @@ import com.neu.edu.pojo.Bill;
 import com.neu.edu.pojo.BillDbEntity;
 import com.neu.edu.pojo.User;
 import com.neu.edu.services.S3Services;
+import com.timgroup.statsd.StatsDClient;
 
 
 @RestController
@@ -47,11 +50,17 @@ public class BillController {
 	@Autowired
 	private FileDao fileDao;
 	
+	@Autowired
+	private StatsDClient statsDClient;
+	
+	private static final Logger logger = LoggerFactory.getLogger(BillController.class);
+	
 	
 	@PostMapping(path ="/v1/bill/", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> createBills(@RequestHeader(value = "Authorization", required=true) String authToken, 
 										 @Valid @RequestBody(required=true) Bill bill) throws QueriesException{
-									
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.api.post");				
 			User userExists = checkAuthentication(authToken);
 			
 			if(userExists != null) {
@@ -63,10 +72,16 @@ public class BillController {
 				billDb.setOwner_id(userExists.getId());
 				
 				try {
+					long dbStart = System.currentTimeMillis();
 					BillDbEntity billDB= billDao.save(billDb);
+					long dbEnd = System.currentTimeMillis();
+					statsDClient.recordExecutionTime("endpoint.v1.bill.api.post.db", dbEnd-dbStart);
 					return new ResponseEntity<>(billDB,HttpStatus.CREATED);
 				}catch(Exception e) {
 				 throw new QueriesException("Internal SQL Server Error");
+			   }finally {
+				   long end = System.currentTimeMillis();
+				   statsDClient.recordExecutionTime("endpoint.v1.bill.api.post", end-start);
 			   }
 		    }
 	   return new ResponseEntity<>("{\n" + "\"error\": \"User not authenticated\"\n" + "}",HttpStatus.BAD_REQUEST);
@@ -75,6 +90,8 @@ public class BillController {
 	@GetMapping(path ="/v1/bills", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getAllBills(@RequestHeader(value = "Authorization", required=true) String authToken)throws QueriesException{
 		
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bills.api.get");
 		User userExists = checkAuthentication(authToken);
 		
 		if(userExists != null) {
@@ -87,6 +104,9 @@ public class BillController {
 				return new ResponseEntity<>(billList,HttpStatus.OK);
 			}catch(Exception e) {
 				throw new QueriesException("Internal SQL Server Error");
+			}finally {
+				long end = System.currentTimeMillis();
+				statsDClient.recordExecutionTime("endpoint.v1.bills.api.get", end-start);
 			}
 			
 		} 
@@ -97,11 +117,12 @@ public class BillController {
 	@DeleteMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteBillbyId(@RequestHeader(value = "Authorization",required=true) String authToken, 
 											     @PathVariable(required=true)String id) throws QueriesException{
-		
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.billId.api.delete");
 		User userExists = checkAuthentication(authToken);
 		try {
 			Optional<BillDbEntity> billDbEntityOpt = billDao.findById(id);
-			if(userExists != null) { //isAuthorisedUser
+			if(userExists != null) { //isAuthorisedUser,
 
 				if (billDbEntityOpt.isPresent()) { //Bill id is valid
 					
@@ -110,15 +131,23 @@ public class BillController {
 					if(billEntity.getOwner_id().equals(userExists.getId())) { //Bill has valid owner
 						
 						billDao.deleteById(id);
-						String fileName = billEntity.getAttachment().getFile_name();
-						boolean deletedFromS3 = s3Service.deleteFile(fileName);
-						if(deletedFromS3) {
-							fileDao.deleteById(billEntity.getAttachment().getId()); // Delete attachment
-							return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+						if (billEntity.getAttachment() != null) {
+							String fileName = billEntity.getAttachment().getFile_name();
+							long s3Start = System.currentTimeMillis();
+							boolean deletedFromS3 = s3Service.deleteFile(fileName);
+							long s3End = System.currentTimeMillis();
+							statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.delete.s3", s3End-s3Start);
+							if(deletedFromS3) {
+								long dbStart = System.currentTimeMillis();
+								fileDao.deleteById(billEntity.getAttachment().getId()); // Delete attachment
+								long dbEnd = System.currentTimeMillis();
+								statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.delete.db", dbEnd-dbStart);
+							}
+							else {
+								throw new FileException("File could not be deleted from S3");
+							}
 						}
-						else {
-							throw new FileException("File could not be deleted from S3");
-						}									
+						return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);									
 					}
 					else
 						return new ResponseEntity<>("{\n" + "\"error\":\"Not authorized to delete this bill ID\"\n" + "}",HttpStatus.UNAUTHORIZED);
@@ -127,15 +156,20 @@ public class BillController {
 					return new ResponseEntity<>("{\n" + "\"error\":\"Bill Not Found\"\n" + "}",HttpStatus.NOT_FOUND);
 			}
 		}catch(Exception e) {
+			logger.error(e.getMessage(), e);
 			throw new QueriesException("Internal SQL Server Error");
-		} 
+		}finally {
+			long end = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.delete", end-start);
+		}
 		return new ResponseEntity<>("{\n" + "\"error\":\"Not authenticated\"\n" + "}",HttpStatus.UNAUTHORIZED);
 	}
 	
 	@GetMapping(path ="/v1/bill/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getBillById(@RequestHeader(value = "Authorization",required=true) String authToken, 
 										 @PathVariable(required=true)String id) throws QueriesException{
-		
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.billId.api.get");
 		User userExists = checkAuthentication(authToken);
 		
 		try {
@@ -159,7 +193,10 @@ public class BillController {
 			}
 		}catch (Exception e) {
 			throw new QueriesException("Internal SQL Server Error");
-		} 
+		}finally {
+			long end = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.get", end-start);
+		}
 	    return new ResponseEntity<>("{\n" + "\"error\":\"Not authenticated\"\n" + "}",HttpStatus.UNAUTHORIZED);
 	}
 	
@@ -167,7 +204,8 @@ public class BillController {
 	public ResponseEntity<?> upadateBillbyId(@RequestHeader(value = "Authorization",required=true) String authToken, 
 											 @PathVariable(required=true)String id,
 											 @Valid @RequestBody(required=true) Bill bill) throws QueriesException{
-	 
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.billId.api.put");
 	  if(bill.getOwner_id() == null && bill.getId()==null && bill.getCreated_ts()==null && bill.getUpdated_ts()==null) { 
 		  
 		User userExists = checkAuthentication(authToken);
@@ -191,7 +229,10 @@ public class BillController {
 						billEntity.setPaymentStatus(bill.getPaymentStatus());
 						billEntity.setUpdated_ts(LocalDateTime.now());
 						
+						long dbStart = System.currentTimeMillis();
 						billEntity = billDao.save(billEntity);
+						long dbEnd = System.currentTimeMillis();
+						statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.put.db", dbEnd-dbStart);
 						if (billEntity!= null) {
 							
 							return new ResponseEntity<>(billEntity,HttpStatus.OK);
@@ -207,7 +248,10 @@ public class BillController {
 			}
 		}catch (Exception e) {
 			throw new QueriesException("Internal SQL Server Error");	
-		} 
+		}finally {
+			long end = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.api.put", end-start);
+		}
 		return new ResponseEntity<>("{\n" + "\"error\":\"Not authorized\"\n" + "}",HttpStatus.UNAUTHORIZED);
 	  }
 	  

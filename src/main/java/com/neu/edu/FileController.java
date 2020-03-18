@@ -29,6 +29,7 @@ import com.neu.edu.pojo.File;
 import com.neu.edu.pojo.User;
 import com.neu.edu.services.AuthenticationService;
 import com.neu.edu.services.S3Services;
+import com.timgroup.statsd.StatsDClient;
 
 @RestController
 public class FileController {
@@ -42,11 +43,15 @@ public class FileController {
 	@Autowired
 	private S3Services s3Service;
 	
+	@Autowired
+	private StatsDClient statsDClient;
+	
 	@PostMapping(path ="/v1/bill/{id}/file", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> attachFile(@RequestHeader(value = "Authorization", required=true) String authToken, 
 										@PathVariable(required=true)String id,
 										@RequestParam ("billAttachment") MultipartFile file) throws QueriesException, FileException, SQLException, ValidationException, IdValidationException, FileTypeException, FileExistsExeption {
-		
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.billId.file.api.post");
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateFileType(file);
 		BillDbEntity billDbEntity = authService.validateBillId(userExists,id);
@@ -56,7 +61,10 @@ public class FileController {
 		try{
 			bytes = file.getBytes();
 			String fileName = id + "_" + file.getOriginalFilename();
+			long s3Start = System.currentTimeMillis();
 			boolean uploaded = s3Service.addFile(bytes, fileName);
+			long s3End = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.api.post.s3", s3End-s3Start);
 			if(uploaded) {
 				File fileAttach = new File();
 				fileAttach.setFile_name(fileName);
@@ -67,8 +75,10 @@ public class FileController {
 				String md5 = DigestUtils.md5DigestAsHex(bytes);
 				fileAttach.setFileHash_md5(md5);
 				fileAttach.setFileSize_KB((file.getSize()));
+				long dbStart = System.currentTimeMillis();
 				File savedFile = fileDao.save(fileAttach);
-
+				long dbEnd = System.currentTimeMillis();
+				statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.api.post.db", dbEnd-dbStart);
 				return new ResponseEntity<>(savedFile, HttpStatus.CREATED);
 			}
 			else {
@@ -77,6 +87,9 @@ public class FileController {
 		}
 		catch (Exception e) {
 			throw new QueriesException("Internal SQL Server Error");
+		}finally {
+			long end = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.user.api.post", end-start);
 		}
 	}
 
@@ -85,11 +98,13 @@ public class FileController {
 	public ResponseEntity<?> getByFileId(@RequestHeader(value = "Authorization", required=true) String authToken,
 										 @PathVariable(required=true)String billId,
 										 @PathVariable(required=true)String fileId) throws QueriesException, SQLException, IdValidationException, ValidationException{
-		
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.billId.file.fileId.api.get");
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateBillId(userExists,billId);
 		File fileEntityOpt = authService.validateFileId(userExists, billId, fileId);
-		
+		long end = System.currentTimeMillis();
+		statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.fileId.api.get", end-start);
 		return new ResponseEntity<>(fileEntityOpt,HttpStatus.OK);
 			
 	}
@@ -98,15 +113,22 @@ public class FileController {
 	public ResponseEntity<Object> delAttachmentbyFileId(@RequestHeader(value = "Authorization",required=true) String authToken, 
 											     		@PathVariable(required=true)String billId,
 											     		@PathVariable(required=true)String fileId) throws FileException, SQLException, ValidationException, IdValidationException, QueriesException{
-	
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bill.billId.file.fileId.api.delete");
 		User userExists = authService.checkAuthentication(authToken);
 		authService.validateBillId(userExists,billId);
 		File fileEntityOpt = authService.validateFileId(userExists, billId, fileId);
 		try {
 			String fileName = fileEntityOpt.getFile_name();
+			long s3Start = System.currentTimeMillis();
 			boolean deletedFromS3 = s3Service.deleteFile(fileName);
+			long s3End = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.fileId.api.delete.s3", s3End-s3Start);
 			if(deletedFromS3) {
+				long dbStart = System.currentTimeMillis();
 				fileDao.deleteById(fileId); // Delete attachment
+				long dbEnd = System.currentTimeMillis();
+				statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.fileId.api.delete.db", dbEnd-dbStart);
 				return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
 			}
 			else {
@@ -115,6 +137,9 @@ public class FileController {
 		
 		}catch (Exception e) {
 			throw new QueriesException("Internal SQL Server Error");
+		}finally {
+			long end = System.currentTimeMillis();
+			statsDClient.recordExecutionTime("endpoint.v1.bill.billId.file.fileId.api.delete", end-start);
 		}
 	}
 	

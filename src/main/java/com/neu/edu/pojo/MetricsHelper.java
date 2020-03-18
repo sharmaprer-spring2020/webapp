@@ -8,12 +8,12 @@ import com.timgroup.statsd.NonBlockingStatsDClient;
 import com.timgroup.statsd.StatsDClient;
 
 @Configuration
-public class MetricsCalc {
+public class MetricsHelper {
 	
 		@Bean
 		public StatsDClient statsDClient(@Value("${metrics.statsd.host:localhost}") String hostname,
 										 @Value("${metrics.statsd.port:8125}") int port) {
-			return new NonBlockingStatsDClient("String", hostname, port);
+			return new NonBlockingStatsDClient("csye2020.metrics", hostname, port);
 		}
 		
 		

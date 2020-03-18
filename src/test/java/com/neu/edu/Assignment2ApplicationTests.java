@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.neu.edu.dao.UserDao;
 import com.neu.edu.pojo.User;
+import com.timgroup.statsd.StatsDClient;
 
 @WebMvcTest(UserController.class)
 class Assignment2ApplicationTests {
@@ -24,6 +25,9 @@ class Assignment2ApplicationTests {
 	
 	@MockBean
 	private UserDao userdao;
+	
+	@MockBean
+	private StatsDClient statsDClient;
 	
 	private String userObj = "{\n" + 
 			"    \"first_name\": \"Prerna\",\n" + 
