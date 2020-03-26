@@ -34,7 +34,12 @@ public class UserController {
 
 	@Autowired
 	private StatsDClient statsDClient;
-
+	
+	//For health checkpoint
+	@GetMapping(path ="/", produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> clearhealthCheckpoint() throws QueriesException{
+			return new ResponseEntity<>("{\n" + "\"message\":\"To initialize health check\"\n" + "}",HttpStatus.OK);
+	}
 	
 	//Get user Information
 	@GetMapping(path ="v1/user/self", produces=MediaType.APPLICATION_JSON_VALUE)
