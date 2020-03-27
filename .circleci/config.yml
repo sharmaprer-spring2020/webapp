@@ -51,4 +51,4 @@ workflows:
     - build_deploy:
         filters:
           branches:
-            only: test-AssignmentDemo
+            only: test/assignment9
