@@ -7,9 +7,13 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
     -s
     #sudo systemctl start cloudwatch.service
 echo "cloudWatch configured"
-sudo systemctl daemon-reload &&
-sudo systemctl restart tomcat.service &&
-sudo systemctl start tomcat.service 
-#mkdir /opt/tomcat8/appLogs &&
-sudo chmod -R 755 /opt/tomcat8/appLogs
-echo "tomcat is now started"
+while [ ! -f /home/ubuntu/list.txt ]
+do
+  sleep 2 # or less like 0.2
+  echo "waiting for file"
+done
+echo "catalina.properties"
+sudo cat opt/tomcat8/conf/catalina.properties
+sudo systemctl daemon-reload
+sudo systemctl restart tomcat.service 
+echo "tomcat is now restarted"
