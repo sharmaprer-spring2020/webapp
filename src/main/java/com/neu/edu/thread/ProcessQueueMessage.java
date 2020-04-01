@@ -5,8 +5,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neu.edu.dao.BillDao;
@@ -15,17 +13,20 @@ import com.neu.edu.services.AWSQueueService;
 
 import software.amazon.awssdk.services.sqs.model.Message;
 //@Component
-public class ProcessQueueMessage  {
+public class ProcessQueueMessage implements Runnable {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ProcessQueueMessage.class);
 
 	@Autowired
 	private BillDao billDao;
 	
+	private volatile boolean continuePoll = true;
+	
 	//@Async
-	public void processMessages() {
+	@Override
+	public void run() {
 		logger.info("Started thread to poll SQS");
-		while (true) {
+		while (continuePoll) {
 			List<Message> message = AWSQueueService.readMessage();
 			for (Message msg: message) {
 				
@@ -51,6 +52,11 @@ public class ProcessQueueMessage  {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void stop() {
+		continuePoll = false;
+
 	}
 
 }
