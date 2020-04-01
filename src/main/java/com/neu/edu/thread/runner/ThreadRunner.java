@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import com.neu.edu.thread.ProcessQueueMessage;
 
-@Component
+//@Component
 public class ThreadRunner implements CommandLineRunner {
 
 	private final ProcessQueueMessage pqm;
