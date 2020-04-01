@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neu.edu.dao.BillDao;
 import com.neu.edu.dao.FileDao;
 import com.neu.edu.dao.UserDao;
@@ -30,7 +31,9 @@ import com.neu.edu.exception.FileException;
 import com.neu.edu.exception.QueriesException;
 import com.neu.edu.pojo.Bill;
 import com.neu.edu.pojo.BillDbEntity;
+import com.neu.edu.pojo.BillDueRequest;
 import com.neu.edu.pojo.User;
+import com.neu.edu.services.AWSQueueService;
 import com.neu.edu.services.S3Services;
 import com.timgroup.statsd.StatsDClient;
 
@@ -56,6 +59,44 @@ public class BillController {
 	private static final Logger logger = LoggerFactory.getLogger(BillController.class);
 	
 	
+	@GetMapping(path ="/v1/bills/due/{days}", produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getBillsByDueDate(@RequestHeader(value = "Authorization", required=true) String authToken,
+											   @PathVariable(required=true)int days) throws QueriesException{
+		
+		logger.debug("Entered get bill by due date");
+		long start = System.currentTimeMillis();
+		statsDClient.incrementCounter("endpoint.v1.bills.due.api.get");
+		logger.debug("incremented endpoint.v1.bills.due.api.get");
+		User userExists = checkAuthentication(authToken);
+		
+		if(userExists != null) {
+			
+			try {
+				System.out.println("Inside bill due");
+				//query to get list of bills where duedate  = today date + days
+				//given 6 hours to cut the tree, spend 4 hours to sharpen the axe
+				//List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days));
+		
+				BillDueRequest bdr = new BillDueRequest(userExists.getId(), days);
+				ObjectMapper objMapper = new ObjectMapper();
+				boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
+				AWSQueueService.readMessage();
+				if(!response) {
+					return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
+				}
+				return new ResponseEntity<>(HttpStatus.OK);
+			}catch(Exception e) {
+				throw new QueriesException("Internal SQL Server Error");
+			}finally {
+				long end = System.currentTimeMillis();
+				logger.debug("endpoint.v1.bills.api.get - Execution time: "+String.valueOf(end-start));
+				statsDClient.recordExecutionTime("endpoint.v1.bills.api.get", end-start);
+			}
+			
+		} 
+		return new ResponseEntity<>("{\n" + "\"error\": \"Not authenticated\"\n" + "}",HttpStatus.BAD_REQUEST);
+		
+	 }
 	@PostMapping(path ="/v1/bill/", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> createBills(@RequestHeader(value = "Authorization", required=true) String authToken, 
 										 @Valid @RequestBody(required=true) Bill bill) throws QueriesException{
