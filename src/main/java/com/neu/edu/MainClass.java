@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
+//@EnableAsync
 public class MainClass extends SpringBootServletInitializer {
 //public class MainClass {
 
