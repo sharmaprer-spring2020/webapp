@@ -14,7 +14,7 @@ import com.neu.edu.pojo.BillDueRequest;
 import com.neu.edu.services.AWSQueueService;
 
 import software.amazon.awssdk.services.sqs.model.Message;
-@Component
+//@Component
 public class ProcessQueueMessage  {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ProcessQueueMessage.class);
@@ -22,7 +22,7 @@ public class ProcessQueueMessage  {
 	@Autowired
 	private BillDao billDao;
 	
-	@Async
+	//@Async
 	public void processMessages() {
 		logger.info("Started thread to poll SQS");
 		while (true) {
