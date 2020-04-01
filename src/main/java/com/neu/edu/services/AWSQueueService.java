@@ -49,9 +49,9 @@ public class AWSQueueService {
                 .messageBody(message)
                 .messageGroupId("dev-test")
                 .build();
-            //System.out.println("After sendMsgRequest");
+            System.out.println("After sendMsgRequest");
             SQS_CLIENT.sendMessage(sendMsgRequest);
-            //System.out.println("After sendMsg");
+            System.out.println("After sendMsg");
             return true;
         } catch (QueueNameExistsException e) {
         	logger.error(e.getMessage(), e);

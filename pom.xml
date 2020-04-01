@@ -11,7 +11,7 @@
 	<groupId>com.neu.edu</groupId>
 	<artifactId>Assignment3</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<!--  <packaging>war</packaging>-->
 	<name>Assignment3</name>
 	<description>Demo project for Spring Boot</description>
 
