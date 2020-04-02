@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.stereotype.Component;
 
@@ -27,22 +28,21 @@ public class AWSQueueService {
 	private static final Logger logger = LoggerFactory.getLogger(AWSQueueService.class);
 	
 	//private static final String QUEUE_NAME = System.getenv("QUEUE_NAME");
+	@Value("${SQS.queue:csyeLambda_topic}")
 	private static final String QUEUE_NAME = "webapp.fifo";
 	private static final SqsClient SQS_CLIENT = SqsClient.builder()
             .region(Region.US_EAST_1)
             .build();
 	
-	private static final GetQueueUrlRequest getQueueRequest = GetQueueUrlRequest.builder()
-            .queueName(QUEUE_NAME)
-            .build();
-    private static final String queueUrl = SQS_CLIENT.getQueueUrl(getQueueRequest).queueUrl();
-        
-        
 	public static boolean sendMessage(String message) {
 		System.out.println("Inside send message due"+message);
         try {
         	
-        	System.out.println("Inside try block");
+        	GetQueueUrlRequest getQueueRequest = GetQueueUrlRequest.builder()
+                    .queueName(QUEUE_NAME)
+                    .build();
+            String queueUrl = SQS_CLIENT.getQueueUrl(getQueueRequest).queueUrl();
+                
         	logger.debug("AWSQueueService sendMessage() : " + message);
             SendMessageRequest sendMsgRequest = SendMessageRequest.builder()
                 .queueUrl(queueUrl)
@@ -61,10 +61,14 @@ public class AWSQueueService {
 	
 	public static List<Message> readMessage() {
 		logger.debug("AWSQueueService readMessage() request");
+		GetQueueUrlRequest getQueueRequest = GetQueueUrlRequest.builder()
+                .queueName(QUEUE_NAME)
+                .build();
+        String queueUrl = SQS_CLIENT.getQueueUrl(getQueueRequest).queueUrl();
         ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(1)
-                .visibilityTimeout(5)
+                //.visibilityTimeout(5)
                 .build();
         List<Message> messages= SQS_CLIENT.receiveMessage(receiveMessageRequest).messages();
         logger.debug("AWSQueueService readMessage() response messages list size :" + messages.size());
@@ -78,6 +82,10 @@ public class AWSQueueService {
 	
 	public static boolean deleteMessage(Message message) {
 		try {
+			GetQueueUrlRequest getQueueRequest = GetQueueUrlRequest.builder()
+                    .queueName(QUEUE_NAME)
+                    .build();
+            String queueUrl = SQS_CLIENT.getQueueUrl(getQueueRequest).queueUrl();
 			DeleteMessageRequest deleteMessageRequest = DeleteMessageRequest.builder()
 					.queueUrl(queueUrl)
 					.receiptHandle(message.receiptHandle())
