@@ -28,7 +28,6 @@ public class AWSQueueService {
 	private static final Logger logger = LoggerFactory.getLogger(AWSQueueService.class);
 	
 	//private static final String QUEUE_NAME = System.getenv("QUEUE_NAME");
-	@Value("${SQS.queue:csyeLambda_topic}")
 	private static final String QUEUE_NAME = "webapp.fifo";
 	private static final SqsClient SQS_CLIENT = SqsClient.builder()
             .region(Region.US_EAST_1)

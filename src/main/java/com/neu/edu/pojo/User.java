@@ -55,7 +55,7 @@ public class User {
 	@NotBlank(message ="Email value cannot be empty")
 	@Email
 	@NotNull
-	@Pattern(regexp="^([A-Za-z0-9.])+@([A-Za-z]){2,8}\\.([a-z]){2,3}$",message ="Please Provide email address of the form p.s@example.com")
+	@Pattern(regexp="^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",message ="Please Provide email address of the form p.s@example.com or p.s@ex.am.com")
 	@Column
 	private String email_address;
 	

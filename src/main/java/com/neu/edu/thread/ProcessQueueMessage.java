@@ -51,6 +51,7 @@ public class ProcessQueueMessage implements Runnable {
 					if (!billList.isEmpty()) {
 						NotificationMessage nm = new NotificationMessage();
 						nm.setUserId(bdr.getUserId());
+						nm.setEmailId(bdr.getEmailId());
 						nm.setUrls(new ArrayList<String>());
 						for (BillDbEntity bill : billList) {
 							nm.getUrls().add(bill.getId());
