@@ -1,5 +1,6 @@
 package com.neu.edu;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -73,18 +74,29 @@ public class BillController {
 			
 			try {
 				System.out.println("Inside bill due");
-				//query to get list of bills where duedate  = today date + days
-				//given 6 hours to cut the tree, spend 4 hours to sharpen the axe
-				//List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days));
-		
-				BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
-				ObjectMapper objMapper = new ObjectMapper();
-				boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
-				AWSQueueService.readMessage();
-				if(!response) {
-					return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
+				List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days));
+				if(billList.size() != 0) {
+					BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
+					ObjectMapper objMapper = new ObjectMapper();
+					boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
+					AWSQueueService.readMessage();
+					if(!response) {
+						return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
+					}
+					return new ResponseEntity<>(billList,HttpStatus.OK);
 				}
-				return new ResponseEntity<>(HttpStatus.OK);
+				else {
+					return new ResponseEntity<>("{\n" + "\"message\": \"no bills for this user\"\n" + "}",HttpStatus.OK);
+				}
+		
+				//BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
+				//ObjectMapper objMapper = new ObjectMapper();
+				//boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
+				//AWSQueueService.readMessage();
+				//if(!response) {
+					//return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
+				//}
+				
 			}catch(Exception e) {
 				throw new QueriesException("Internal SQL Server Error");
 			}finally {
