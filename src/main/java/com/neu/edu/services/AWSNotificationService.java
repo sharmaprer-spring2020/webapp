@@ -7,12 +7,10 @@ import org.springframework.stereotype.Component;
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
-import software.amazon.awssdk.services.sns.model.ListSubscriptionsRequest;
 import software.amazon.awssdk.services.sns.model.ListTopicsResponse;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
 import software.amazon.awssdk.services.sns.model.SnsException;
-import software.amazon.awssdk.services.sns.model.Subscription;
 
 @Component
 public class AWSNotificationService {
