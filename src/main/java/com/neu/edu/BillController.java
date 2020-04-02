@@ -77,7 +77,7 @@ public class BillController {
 				//given 6 hours to cut the tree, spend 4 hours to sharpen the axe
 				//List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days));
 		
-				BillDueRequest bdr = new BillDueRequest(userExists.getId(), days);
+				BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
 				ObjectMapper objMapper = new ObjectMapper();
 				boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
 				AWSQueueService.readMessage();
