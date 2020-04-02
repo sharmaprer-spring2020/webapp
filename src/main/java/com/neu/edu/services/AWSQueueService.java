@@ -4,14 +4,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.neu.edu.MainClass;
-import com.neu.edu.pojo.BillDueRequest;
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -28,7 +21,7 @@ public class AWSQueueService {
 	private static final Logger logger = LoggerFactory.getLogger(AWSQueueService.class);
 	
 	//private static final String QUEUE_NAME = System.getenv("QUEUE_NAME");
-	private static final String QUEUE_NAME = "webapp.fifo";
+	private static final String QUEUE_NAME =  System.getenv("QUEUE_NAME"); //"webapp.fifo";
 	private static final SqsClient SQS_CLIENT = SqsClient.builder()
             .region(Region.US_EAST_1)
             .build();
