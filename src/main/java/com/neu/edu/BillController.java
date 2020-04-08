@@ -79,7 +79,7 @@ public class BillController {
 					BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
 					ObjectMapper objMapper = new ObjectMapper();
 					boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
-					AWSQueueService.readMessage();
+					//AWSQueueService.readMessage();
 					if(!response) {
 						return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
 					}
