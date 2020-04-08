@@ -47,7 +47,7 @@ public class ProcessQueueMessage implements Runnable {
 					LocalDate currentDate = LocalDate.now();
 					List<BillDbEntity> billList = billDao.getByDueDate(bdr.getUserId(),LocalDate.now().plusDays(bdr.getDays()),currentDate);
 					//To SNS
-					if (!billList.isEmpty()) {
+					//if (!billList.isEmpty()) {
 						NotificationMessage nm = new NotificationMessage();
 						nm.setUserId(bdr.getUserId());
 						nm.setEmailId(bdr.getEmailId());
@@ -57,7 +57,7 @@ public class ProcessQueueMessage implements Runnable {
 						}
 						ObjectMapper om  = new ObjectMapper();
 						AWSNotificationService.pushMessage(om.writeValueAsString(nm));
-					}
+					//}
 					//delete each message from q
 					logger.info(" Sending Request to delete message Id" + msg.messageId());
 					AWSQueueService.deleteMessage(msg);
