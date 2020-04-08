@@ -44,7 +44,8 @@ public class ProcessQueueMessage implements Runnable {
 					logger.info(" Message body ;" + msg.body());
 					System.out.println("UserID from msg body user Id: "+bdr.getUserId());
 					System.out.println("UserID from msg body days: "+bdr.getDays());
-					List<BillDbEntity> billList = billDao.getByDueDate(bdr.getUserId(),LocalDate.now().plusDays(bdr.getDays()));
+					LocalDate currentDate = LocalDate.now();
+					List<BillDbEntity> billList = billDao.getByDueDate(bdr.getUserId(),LocalDate.now().plusDays(bdr.getDays()),currentDate);
 					//To SNS
 					if (!billList.isEmpty()) {
 						NotificationMessage nm = new NotificationMessage();

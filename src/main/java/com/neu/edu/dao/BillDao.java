@@ -23,8 +23,10 @@ public interface BillDao extends JpaRepository<BillDbEntity, String> {
 	
 	@Query(value="Select * FROM bill where owner_id= :owner_id AND due_date <= :date "
 			+ "AND payment_status='due'"
-			+ "AND due_date >= CURDATE()", nativeQuery = true)
+			+ "AND due_date >= :currentDate", nativeQuery = true)
+			//+ "AND due_date >= CURDATE()", nativeQuery = true)
 	List<BillDbEntity> getByDueDate(@Param("owner_id")String owner_id,
-			 						@Param("date")LocalDate date);
+			 						@Param("date")LocalDate date,
+			 						@Param ("currentDate") LocalDate currentDate);
 
 }
