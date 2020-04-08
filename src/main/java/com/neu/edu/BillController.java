@@ -74,7 +74,9 @@ public class BillController {
 			
 			try {
 				System.out.println("Inside bill due");
-				List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days));
+				System.out.println("Inside bill due with currentdate val: "+LocalDate.now());
+				LocalDate currentDate = LocalDate.now();
+				List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days),currentDate);
 				if(billList.size() != 0) {
 					BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
 					ObjectMapper objMapper = new ObjectMapper();
