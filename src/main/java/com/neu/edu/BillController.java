@@ -75,9 +75,7 @@ public class BillController {
 			try {
 				System.out.println("Inside bill due");
 				System.out.println("Inside bill due with currentdate val: "+LocalDate.now());
-				LocalDate currentDate = LocalDate.now();
-				List<BillDbEntity> billList = billDao.getByDueDate(userExists.getId(),LocalDate.now().plusDays(days),currentDate);
-				if(billList.size() != 0) {
+			
 					BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
 					ObjectMapper objMapper = new ObjectMapper();
 					boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
@@ -85,20 +83,7 @@ public class BillController {
 					if(!response) {
 						return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
 					}
-					return new ResponseEntity<>(billList,HttpStatus.OK);
-				}
-				else {
-					return new ResponseEntity<>("{\n" + "\"message\": \"no bills for this user\"\n" + "}",HttpStatus.OK);
-				}
-		
-				//BillDueRequest bdr = new BillDueRequest(userExists.getId(), userExists.getEmail_address(), days);
-				//ObjectMapper objMapper = new ObjectMapper();
-				//boolean response = AWSQueueService.sendMessage(objMapper.writeValueAsString(bdr));
-				//AWSQueueService.readMessage();
-				//if(!response) {
-					//return new ResponseEntity<>("{\n" + "\"message\": \"could not process the request\"\n" + "}",HttpStatus.OK);
-				//}
-				
+					return new ResponseEntity<>("{\n" + "\"message\": \"Email will be sent shortly\"\n" + "}",HttpStatus.OK);
 			}catch(Exception e) {
 				throw new QueriesException("Internal SQL Server Error");
 			}finally {
